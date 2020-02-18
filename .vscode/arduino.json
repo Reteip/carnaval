@@ -1,0 +1,5 @@
+{
+    "board": "arduino:avr:uno",
+    "port": "/dev/cu.usbserial-DN01DK5K",
+    "sketch": "carnaval/carnaval.ino"
+}

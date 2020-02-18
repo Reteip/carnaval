@@ -1,0 +1,2 @@
+void ExecuteState();
+void SwitchState();

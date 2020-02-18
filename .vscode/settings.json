@@ -1,0 +1,21 @@
+{
+    "files.associations": {
+        "loveeffects.h": "c",
+        "myavrport.h": "c",
+        "io.h": "c",
+        "interrupt.h": "c",
+        "leddefinitions.h": "c",
+        "rgbtohsv.h": "c",
+        "__bit_reference": "cpp",
+        "__hash_table": "cpp",
+        "__split_buffer": "cpp",
+        "array": "cpp",
+        "initializer_list": "cpp",
+        "iterator": "cpp",
+        "string": "cpp",
+        "string_view": "cpp",
+        "unordered_map": "cpp",
+        "vector": "cpp"
+    },
+    "arduino.path": "/Applications/Arduino.app"
+}
