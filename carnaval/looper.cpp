@@ -15,14 +15,16 @@ enum states_t {MENU, PROGRAM, TO_PROGRAM, ERROR};
 static states_t STATE;
 static uint8_t CYCLE; 
 static uint8_t LOOPINDEX; // 255
-static uint16_t PROGRAM_COUNTER; // 65536
 static uint8_t UPDATES_PER_SECOND;
+
+static uint16_t PROGRAM_COUNTER; // 65536
 
 void setup() 
 {
     Serial.begin(9600);
     UPDATES_PER_SECOND = 100;
     InitLedDriver();
+    SetStripOff();
     
     menuBtn.begin();              // initialize the button object
     programBtn.begin();
@@ -30,15 +32,17 @@ void setup()
     delay( 3000 ); // power-up safety delay
     
     Serial.println("SETUP DONE");
-    
-    SetStripOff();
+    STATE=PROGRAM;
+    CYCLE = 0;
 }
 
 void loop()
 {
 
     LOOPINDEX = LOOPINDEX + 1; /* motion speed */
+    
     PROGRAM_COUNTER = PROGRAM_COUNTER + 1;
+    if (PROGRAM_COUNTER == 0) Serial.println("Jep");
     menuBtn.read(); // read the button
     programBtn.read();
     

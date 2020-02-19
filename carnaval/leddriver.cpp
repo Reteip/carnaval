@@ -1,11 +1,11 @@
 #include <Arduino.h>
-#include <FastLED.h>
 #include "leddriver.h"
+
 #define VOLTS          5
 #define MAX_MA       450
 #define LED_PIN     5
 #define NUM_LEDS    105
-#define BRIGHTNESS  255
+#define BRIGHTNESS  168
 #define LED_TYPE    WS2812B
 #define COLOR_ORDER GRB
 
@@ -17,6 +17,10 @@
 
 
 CRGB leds[NUM_LEDS];
+CRGB ledsOriginal[NUM_LEDS];
+uint8_t directionFlags[NUM_LEDS];
+uint8_t stepFlags[NUM_LEDS];
+
 CRGBPalette16 currentPalette;
 TBlendType    currentBlending;
 
@@ -52,28 +56,35 @@ void RainbowProgram(uint8_t index) {
 
 }
 
-void Biertje(uint16_t loopindex)
+void Biertje(uint16_t programCounter)
 {   
-	uint8_t index = loopindex / 6;
-	if (index > NUM_LEDS) index = NUM_LEDS;
-	uint8_t foam = (index / 5) + 1;
-    for( int i = 0; i < NUM_LEDS; i++) {
-		if (i < index) 
-		{
-			if (i > (index - foam))
+	uint16_t index = programCounter / 2;
+	if (index > NUM_LEDS) {
+		if (programCounter % 4 ) {
+			setRandomPixelToOriginalColor();
+		}
+		fadeLightBy(leds, NUM_LEDS, 1);
+ 	} else 
+	{
+		uint8_t foam = (index / 5) + 1;
+		for( int i = 0; i < NUM_LEDS; i++) {
+			if (i < index) 
 			{
-				leds[i] = CRGB::White;
+				if (i > (index - foam))
+				{
+					leds[i] = CRGB::White;
+				} else
+				{
+					leds[i] = CRGB ( 255, 159, 0 );
+				}
+				
 			} else
 			{
-	        	leds[i] = CRGB ( 255, 159, 0 );
+				leds[i] = CRGB::Black;
 			}
-			
-		} else
-		{
-			leds[i] = CRGB::Black;
+			ledsOriginal[i] = leds[i];
 		}
-		
-    }
+	}
 	
 }
 
@@ -86,6 +97,7 @@ void DoDelay(unsigned long ms)
 	FastLED.delay(ms);
 }
 
+
 void Show_Cycle(uint8_t cycle) {
   switch (cycle){
 	  case 0:
@@ -93,7 +105,6 @@ void Show_Cycle(uint8_t cycle) {
 		leds[MENU_LED_1] = CRGB ( 255, 255, 255 );		
 		leds[MENU_LED_2] = CRGB ( 255, 159, 0 );
 		leds[MENU_LED_3] = CRGB ( 255, 159, 0 );	
-
 		break;
 		//DiscoNormal
 		case 1:		
@@ -173,11 +184,11 @@ void Show_Cycle(uint8_t cycle) {
 	
 }
 
-void ExecuteProgram(uint8_t cycle, uint16_t loopindex)
+void ExecuteProgram(uint8_t cycle, uint16_t programCounter)
 {
 	 switch (cycle){
 	  case 0:
-		Biertje(loopindex);
+		Biertje(programCounter);
 		break;
 		//DiscoNormal
 		case 1:		
@@ -188,12 +199,6 @@ void ExecuteProgram(uint8_t cycle, uint16_t loopindex)
 		FillLEDsFromPaletteColors( 0);
 		break;
 		case 2:
-		currentPalette = LavaColors_p;
-		currentBlending = LINEARBLEND;
-    
-  		FillLEDsFromPaletteColors( loopindex);
-
-
 		//Defibrillator
 		break;
 		case 3:
@@ -201,7 +206,7 @@ void ExecuteProgram(uint8_t cycle, uint16_t loopindex)
 		currentPalette = RainbowColors_p;
 		currentBlending = LINEARBLEND;
     
-  		FillLEDsFromPaletteColors( loopindex);
+  		FillLEDsFromPaletteColors( programCounter);
 
 		break;
 		case 4:
@@ -224,4 +229,11 @@ void ExecuteProgram(uint8_t cycle, uint16_t loopindex)
 		default:
 		break;
 	 }
+}
+
+
+void setRandomPixelToOriginalColor()
+{
+	int pos = random16(NUM_LEDS);
+	leds[pos] = ledsOriginal[pos];
 }
