@@ -4,23 +4,28 @@
 #include <JC_Button.h>
 
 Button menuBtn(2);
-Button gameBtn(4);
+Button programBtn(4);
 
-#define UPDATES_PER_SECOND 100
+
 #define LONG_PRESS 1000
 #define ERROR_PRESS 10000
-#define MAX_CYCLE 11
+#define MAX_CYCLE 13
 
-enum states_t {MENU, GAME, TO_GAME, ERROR};
+enum states_t {MENU, PROGRAM, TO_PROGRAM, ERROR};
+static states_t STATE;
+static uint8_t CYCLE; 
+static uint8_t LOOPINDEX; // 255
+static uint16_t PROGRAM_COUNTER; // 65536
+static uint8_t UPDATES_PER_SECOND;
 
 void setup() 
 {
     Serial.begin(9600);
-    
+    UPDATES_PER_SECOND = 100;
     InitLedDriver();
     
     menuBtn.begin();              // initialize the button object
-    gameBtn.begin();
+    programBtn.begin();
 
     delay( 3000 ); // power-up safety delay
     
@@ -31,13 +36,11 @@ void setup()
 
 void loop()
 {
-    static uint8_t CYCLE; 
-    static uint8_t LOOPINDEX;
 
     LOOPINDEX = LOOPINDEX + 1; /* motion speed */
-
+    PROGRAM_COUNTER = PROGRAM_COUNTER + 1;
     menuBtn.read(); // read the button
-    gameBtn.read();
+    programBtn.read();
     
     SwitchState();
 
@@ -47,24 +50,20 @@ void loop()
 
 void ExecuteState() 
 {
-    static states_t STATE;
-    static uint8_t CYCLE; 
-    static uint8_t LOOPINDEX;
+
 
     switch (STATE)
     {
       case MENU:
         Show_Cycle(CYCLE);
         break;
-      case GAME:    
-        RainbowProgram(LOOPINDEX);    
+      case PROGRAM:    
+        ExecuteProgram(CYCLE, PROGRAM_COUNTER);   
         break;
-      case TO_GAME:
-
+      case TO_PROGRAM:
+        SetStripOff();
       case ERROR:
-        RainbowProgram(LOOPINDEX);        
-        break;
-      default:
+        SetStripOff();
         break;
     }
     
@@ -74,10 +73,6 @@ void ExecuteState()
 
 void SwitchState() 
 {
-    static states_t STATE;
-    static uint8_t CYCLE; 
-    static uint8_t LOOPINDEX;
-
     switch (STATE)
     {
       case MENU:
@@ -89,7 +84,7 @@ void SwitchState()
           if (CYCLE > MAX_CYCLE) CYCLE = 0;
           Serial.println("Menu up " );
         }
-        if (gameBtn.wasReleased())    // if the button was released, change the LED state
+        if (programBtn.wasReleased())    // if the button was released, change the LED state
         {
           SetStripOff();
           if (CYCLE == 0) { CYCLE = MAX_CYCLE; } else
@@ -97,11 +92,11 @@ void SwitchState()
             CYCLE-=1;
           }
           Serial.println("Menu down ");
-        } else if (gameBtn.pressedFor(LONG_PRESS))
+        } else if (programBtn.pressedFor(LONG_PRESS))
         {
-          SetStripOff();
-          Serial.println("To Game ");
-          STATE = TO_GAME;
+          Serial.println("To Program ");
+          STATE = TO_PROGRAM;
+          PROGRAM_COUNTER = 0;
         }
         if (menuBtn.pressedFor(ERROR_PRESS)) {
           Serial.println("ERROR ");
@@ -110,35 +105,35 @@ void SwitchState()
  
       break;
      
-      case GAME:
-        RainbowProgram(LOOPINDEX);        
+      case PROGRAM:
+        if (programBtn.wasReleased())  {
+          PROGRAM_COUNTER = 0;
+        }
         if (menuBtn.wasReleased())    // if the button was released, change the LED state
         {
           SetStripOff();
           Serial.println("To Menu ");
           STATE = MENU;
         }
-        Show();
-        DoDelay(1000 / UPDATES_PER_SECOND);
       break;
-      case TO_GAME:
+      case TO_PROGRAM:
         SetStripOff();
-        if (gameBtn.wasReleased())  {
-          Serial.println("Enter game");
-          STATE = GAME;
+        if (programBtn.wasReleased())  {
+          Serial.println("Enter program");
+          STATE = PROGRAM;
         }
         if (menuBtn.wasReleased()) {
           Serial.println("Back to Menu");
           STATE = MENU;
         }
-        if (gameBtn.pressedFor(ERROR_PRESS)) {
+        if (programBtn.pressedFor(ERROR_PRESS)) {
           Serial.println("ERROR ");
           STATE = ERROR;
         }
       break;
       case ERROR:
-         if (gameBtn.wasReleased())  {
-          Serial.println("Exit Error Game to Menu");
+         if (programBtn.wasReleased())  {
+          Serial.println("Exit Error Program to Menu");
           STATE = MENU;
          }
         if (menuBtn.wasReleased()) {
