@@ -153,53 +153,76 @@ void CopyStrip(uint8_t origin, uint8_t target) {
 	}
 }
 
+void ShiftAllLedsUp()
+{
+	for (int pos = NUM_LEDS; pos > 0; pos--)
+	{
+		leds[pos] = leds[pos - 1];
+	}
+}
+
 void Biertje(uint16_t programCounter)
 {   
-	uint16_t index = programCounter / 10;
-	if (index > NUM_LEDS) {
-		if (random8(5) == 0) {
-			setRandomPixelToOriginalColor();
-     		fadeLightBy(leds, NUM_LEDS, 1);
-
-		}
- 	} else 
+	if (programCounter % 10 == 0)
 	{
-		uint8_t foam = (index / 3) + 1;
-		for( int i = 0; i < NUM_LEDS_PER_STRIP; i++) {
-			if (i < index) 
+		uint16_t index = programCounter / 10;
+		if (index < NUM_LEDS_PER_STRIP)
+		{
+			ShiftAllLedsUp();
+			
+			leds[0] = CRGB ( 255, 159, 0 );
+			uint8_t foam = (index / 100.0) * 30;
+
+			leds[NUM_LEDS_PER_STRIP] = CRGB ( 255, 159, 0 );
+			//leds[2 * NUM_LEDS_PER_STRIP] = CRGB ( 255, 159, 0 );
+			for (int i = 0; i < foam; i++) 
 			{
-				if (i > (index - foam))
-				{
-					leds[i + NUM_LEDS_PER_STRIP] = leds[i + NUM_LEDS_PER_STRIP * 2] = leds[i] = CRGB::White;
-					
-				} else
-				{
-					leds[i + NUM_LEDS_PER_STRIP] = leds[i + NUM_LEDS_PER_STRIP * 2] = leds[i] = CRGB ( 255, 159, 0 );
-				}
-				
-			} 
-			ledsOriginal[i + NUM_LEDS_PER_STRIP] = ledsOriginal[i] = leds[i];
+				leds[index - i] = CRGB::White;
+				leds[index + NUM_LEDS_PER_STRIP - i] = CRGB::White;
+			}
+		} 
+		if (index >= NUM_LEDS_PER_STRIP && index < 2 * NUM_LEDS_PER_STRIP)
+		{
+			
 		}
-		for( int i = NUM_LEDS_PER_STRIP; i < (NUM_LEDS_PER_STRIP * 2); i++) {
-			if (i < index) 
-			{
-				if (i > (index - foam))
-				{
-					//leds[i + (NUM_LEDS_PER_STRIP * 3)] = CRGB::White;
-				} else
-				{
-					//leds[i + (NUM_LEDS_PER_STRIP * 3)] = CRGB ( 255, 159, 0 );
-				}
-				
-			} 
-			ledsOriginal[i] = leds[i];
-		}
-		
-		//ReverseDoubleLeds();
 	}
+}	
+// 	uint16_t index = programCounter / 10;
+// 	if (index > NUM_LEDS) {
+// 		if (random8(5) == 0) {
+// 			setRandomPixelToOriginalColor();
+//      		fadeLightBy(leds, NUM_LEDS, 1);
+
+// 		}
+//  	} else 
+// 	{
+		
+// 		uint8_t beerCounter = 0;
+// 		if (index > NUM_LEDS_PER_STRIP) uint8_t beerCounter = 1;
+// 		if (index > 2 * NUM_LEDS_PER_STRIP) uint8_t beerCounter = 2;
+
+// 		uint8_t foam = ((index - beerCounter * NUM_LEDS_PER_STRIP) / 3) + 1;
+// 		for( int i = 0; i < NUM_LEDS_PER_STRIP; i++) {
+// 			if (i < index) 
+// 			{
+// 				if (i > (index - foam))
+// 				{
+// 					leds[i + beerCounter * NUM_LEDS_PER_STRIP] = CRGB::White;
+					
+// 				} else
+// 				{
+// 					leds[i + beerCounter * NUM_LEDS_PER_STRIP] = CRGB ( 255, 159, 0 );
+// 				}
+				
+// 			} 
+// 			ledsOriginal[i + NUM_LEDS_PER_STRIP] = ledsOriginal[i] = leds[i];
+// 		}
+		
+// 		//ReverseDoubleLeds();
+// 	}
 
 	
-}
+// }
 
 void Show() {
 	FastLED.show();

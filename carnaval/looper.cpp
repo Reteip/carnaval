@@ -42,7 +42,7 @@ void loop()
     LOOPINDEX = LOOPINDEX + 1; /* motion speed */
     
     PROGRAM_COUNTER = PROGRAM_COUNTER + 1;
-    if (PROGRAM_COUNTER == 0) Serial.println("Jep");
+    if (PROGRAM_COUNTER == 0) Serial.println("Program Counter Reset");
     menuBtn.read(); // read the button
     programBtn.read();
     
@@ -111,6 +111,7 @@ void SwitchState()
       case PROGRAM:
         if (programBtn.wasReleased())  {
           PROGRAM_COUNTER = 0;
+          SetStripOff();
         }
         if (menuBtn.wasReleased())    // if the button was released, change the LED state
         {
