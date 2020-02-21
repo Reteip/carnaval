@@ -2,9 +2,12 @@
 #include "leddriver.h"
 
 #define VOLTS          5
-#define MAX_MA       450
-#define LED_PIN     5
-#define NUM_LEDS    105
+#define MAX_MA       2000
+#define LED_PIN_1    9
+#define LED_PIN_2    10
+#define LED_PIN_3    11
+#define NUM_LEDS    104
+#define NUM_LEDS_PER_STRIP 26
 #define BRIGHTNESS  168
 #define LED_TYPE    WS2812B
 #define COLOR_ORDER GRB
@@ -24,9 +27,14 @@ uint8_t stepFlags[NUM_LEDS];
 CRGBPalette16 currentPalette;
 TBlendType    currentBlending;
 
+enum { CENTER = 1, LEFT = 2, RIGHT = 3, FADEUP = 4, FADEDOWN = 5};
+
 void InitLedDriver() {
 	FastLED.setMaxPowerInVoltsAndMilliamps(VOLTS,MAX_MA);
-    FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );
+    FastLED.addLeds<LED_TYPE, LED_PIN_1, COLOR_ORDER>(leds, NUM_LEDS_PER_STRIP).setCorrection( TypicalLEDStrip );
+	FastLED.addLeds<LED_TYPE, LED_PIN_2, COLOR_ORDER>(leds, NUM_LEDS_PER_STRIP, NUM_LEDS_PER_STRIP).setCorrection( TypicalLEDStrip );
+	FastLED.addLeds<LED_TYPE, LED_PIN_3, COLOR_ORDER>(leds, 2 * NUM_LEDS_PER_STRIP, NUM_LEDS_PER_STRIP * 2).setCorrection( TypicalLEDStrip );
+
     FastLED.setBrightness(  BRIGHTNESS );
 }
 
@@ -56,35 +64,140 @@ void RainbowProgram(uint8_t index) {
 
 }
 
+
+void ProcessRipple()
+{
+	uint8_t BrightAmount = 16;
+	for( int pos = 0; pos < NUM_LEDS; pos++) { 
+		if (directionFlags[pos] == CENTER)
+		{
+			directionFlags[pos - 1] = LEFT;
+			stepFlags[pos - 1] = 2;
+			directionFlags[pos + 1] = RIGHT;
+			stepFlags[pos +1 ] = 2;
+			directionFlags[pos] = FADEUP;
+		}
+		if (directionFlags[pos] == LEFT) {
+			if (stepFlags[pos] > 1) {
+				directionFlags[pos - 1] = LEFT;
+				stepFlags[pos - 1] = stepFlags[pos] - 1; 
+			}
+			directionFlags[pos] = FADEUP;
+			stepFlags[pos] = 16;
+			ledsOriginal[pos] = leds[pos];
+
+		}
+		if (directionFlags[pos] == RIGHT) {
+			if (stepFlags[pos] > 1) {
+				directionFlags[pos + 1] = RIGHT;
+				stepFlags[pos + 1] = stepFlags[pos] - 1; 
+			}
+			directionFlags[pos] = FADEUP;
+			stepFlags[pos] = 16;
+			ledsOriginal[pos] = leds[pos];
+		}
+		if (directionFlags[pos] == FADEUP) 
+		{
+			if (stepFlags[pos] > 0)
+			{
+				if ((leds[pos].r + BrightAmount < 255) || (leds[pos].g + BrightAmount < 255) || (leds[pos].b + BrightAmount < 255))
+				{
+					leds[pos].r = min(leds[pos].r + BrightAmount, 255);
+					leds[pos].g = min(leds[pos].g + BrightAmount, 255);
+					leds[pos].b = min(leds[pos].b + BrightAmount, 255);
+					stepFlags[pos]-=1;
+				}
+				else {
+					directionFlags[pos] = FADEDOWN;
+					stepFlags[pos] = 16 - stepFlags[pos];
+				}
+			}
+		}
+		if (directionFlags[pos] == FADEDOWN)
+		{
+			if (stepFlags[pos] > 0)
+			{
+				leds[pos].r = max(leds[pos].r - BrightAmount, ledsOriginal[pos].r);
+				leds[pos].g = max(leds[pos].g - BrightAmount, ledsOriginal[pos].g);
+				leds[pos].b = max(leds[pos].b - BrightAmount, ledsOriginal[pos].b);
+				stepFlags[pos]-=1;
+			} else
+			{
+				directionFlags[pos] = 0;
+			}
+		}
+	}
+}
+
+void AddRipple(uint8_t center)
+{
+	if (directionFlags[center] == 0)
+	{
+		directionFlags[center] = 1;
+		ledsOriginal[center] = leds[center];
+		stepFlags[center] = 16;
+	}
+}
+
+void ReverseDoubleLeds() 
+{
+	for( int i = 0; i < NUM_LEDS / 2; i++) { 
+		leds[NUM_LEDS - 1 - i] = leds[i];
+		ledsOriginal[NUM_LEDS - 1 - i] = ledsOriginal[i];
+	}
+}
+
+void CopyStrip(uint8_t origin, uint8_t target) {
+	for( int pos = origin; pos < NUM_LEDS_PER_STRIP; pos++) { 
+		leds[pos + target] = leds[pos];
+	}
+}
+
 void Biertje(uint16_t programCounter)
 {   
-	uint16_t index = programCounter / 2;
+	uint16_t index = programCounter / 10;
 	if (index > NUM_LEDS) {
-		if (programCounter % 4 ) {
+		if (random8(5) == 0) {
 			setRandomPixelToOriginalColor();
+     		fadeLightBy(leds, NUM_LEDS, 1);
+
 		}
-		fadeLightBy(leds, NUM_LEDS, 1);
  	} else 
 	{
-		uint8_t foam = (index / 5) + 1;
-		for( int i = 0; i < NUM_LEDS; i++) {
+		uint8_t foam = (index / 3) + 1;
+		for( int i = 0; i < NUM_LEDS_PER_STRIP; i++) {
 			if (i < index) 
 			{
 				if (i > (index - foam))
 				{
-					leds[i] = CRGB::White;
+					leds[i + NUM_LEDS_PER_STRIP] = leds[i + NUM_LEDS_PER_STRIP * 2] = leds[i] = CRGB::White;
+					
 				} else
 				{
-					leds[i] = CRGB ( 255, 159, 0 );
+					leds[i + NUM_LEDS_PER_STRIP] = leds[i + NUM_LEDS_PER_STRIP * 2] = leds[i] = CRGB ( 255, 159, 0 );
 				}
 				
-			} else
+			} 
+			ledsOriginal[i + NUM_LEDS_PER_STRIP] = ledsOriginal[i] = leds[i];
+		}
+		for( int i = NUM_LEDS_PER_STRIP; i < (NUM_LEDS_PER_STRIP * 2); i++) {
+			if (i < index) 
 			{
-				leds[i] = CRGB::Black;
-			}
+				if (i > (index - foam))
+				{
+					//leds[i + (NUM_LEDS_PER_STRIP * 3)] = CRGB::White;
+				} else
+				{
+					//leds[i + (NUM_LEDS_PER_STRIP * 3)] = CRGB ( 255, 159, 0 );
+				}
+				
+			} 
 			ledsOriginal[i] = leds[i];
 		}
+		
+		//ReverseDoubleLeds();
 	}
+
 	
 }
 
@@ -136,6 +249,7 @@ void Show_Cycle(uint8_t cycle) {
 		leds[MENU_LED_2] = CRGB ( 0, 255, 0 );
 		leds[MENU_LED_3] = CRGB ( 0, 0, 255 );
 		break;
+		// Wit, roze, oranje, blauw, rood,groen, geel, lichtblauw
 		case 6:
 		leds[MENU_LED_1] = CRGB::Cyan;
 		leds[MENU_LED_2] = CRGB::Cyan;
@@ -178,10 +292,15 @@ void Show_Cycle(uint8_t cycle) {
 		break;
 		default:
 		break;
-		// Wit, roze, oranje, blauw, rood,groen, geel, lichtblauw
-	}
 
-	
+		
+	}
+	ReverseDoubleLeds();
+	// leds[NUM_LEDS-1-MENU_LED_1] = leds[MENU_LED_1];
+	// leds[NUM_LEDS-1-MENU_LED_2] = leds[MENU_LED_2];
+	// leds[NUM_LEDS-1-MENU_LED_3] = leds[MENU_LED_3];
+	// leds[NUM_LEDS-1-MENU_LED_4] = leds[MENU_LED_4];
+	// leds[NUM_LEDS-1-MENU_LED_5] = leds[MENU_LED_5];
 }
 
 void ExecuteProgram(uint8_t cycle, uint16_t programCounter)
@@ -222,10 +341,38 @@ void ExecuteProgram(uint8_t cycle, uint16_t programCounter)
 		leds[MENU_LED_3] = CRGB ( 0, 0, 255 );
 		break;
 		case 6:
-		leds[MENU_LED_1] = CRGB::Cyan;
-		leds[MENU_LED_2] = CRGB::Cyan;
-		leds[MENU_LED_3] = CRGB::Cyan;
+			if (programCounter == 1)
+			{
+				fill_solid(leds, NUM_LEDS, CRGB::Cyan);
+			}
+			EVERY_N_MILLISECONDS( random16(500, 2000) ) { 
+				AddRipple(random8(NUM_LEDS));
+			}
+			ProcessRipple();	
 		break;
+		case 7:
+		fill_solid(leds, NUM_LEDS, CRGB::Yellow);
+		break;
+		case 8:
+		fill_solid(leds, NUM_LEDS, CRGB::Green);
+		break;
+		case 9:
+		fill_solid(leds, NUM_LEDS, CRGB::Red);
+		break;
+		case 10:
+		fill_solid(leds, NUM_LEDS, CRGB::DarkBlue);
+		break;
+		case 11:
+		fill_solid(leds, NUM_LEDS, CRGB::DarkOrange);
+		break;
+		case 12:
+		fill_solid(leds, NUM_LEDS, CRGB::Purple);
+		break;
+		case 13:
+		fill_solid(leds, NUM_LEDS, CRGB::White);
+		break;
+
+
 		default:
 		break;
 	 }

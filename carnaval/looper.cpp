@@ -54,8 +54,6 @@ void loop()
 
 void ExecuteState() 
 {
-
-
     switch (STATE)
     {
       case MENU:
@@ -66,6 +64,7 @@ void ExecuteState()
         break;
       case TO_PROGRAM:
         SetStripOff();
+        break;
       case ERROR:
         SetStripOff();
         break;
