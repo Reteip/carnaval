@@ -316,7 +316,7 @@ void setRandomPixelToOriginalColor()
 
 void ScreenSaver()
 {
-	EVERY_N_SECONDS( random8(1, 10) ) { 
+	EVERY_N_SECONDS( random8(1, 20) ) { 
 		AddRipple(random8(NUM_LEDS));
 	}
 	EVERY_N_MILLISECONDS(random8(30)) { 
