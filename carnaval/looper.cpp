@@ -60,7 +60,7 @@ void ExecuteState()
         Show_Cycle(CYCLE);
         break;
       case PROGRAM:    
-        ExecuteProgram(CYCLE, PROGRAM_COUNTER);   
+        ExecuteProgram();   
         break;
       case TO_PROGRAM:
         SetStripOff();
@@ -147,4 +147,75 @@ void SwitchState()
       break;
 
     }
+}
+
+
+void ExecuteProgram()
+{
+	 switch (CYCLE){
+	  case 0:
+		BiertjeProgram(PROGRAM_COUNTER);
+		break;
+		//DiscoNormal
+		case 1:		
+		// Serial.println("Case 1, solid white");
+
+		// fill_solid( currentPalette, 16, CRGB::Yellow);
+		// currentBlending = NOBLEND;
+		// FillLEDsFromPaletteColors( 0);
+		 break;
+		case 2:
+		//Defibrillator
+		break;
+		case 3:
+		//Heartbeat
+		// currentPalette = RainbowColors_p;
+		// currentBlending = LINEARBLEND;
+    
+  	// 	FillLEDsFromPaletteColors( programCounter);
+
+		break;
+		case 4:
+		//DiscoHooker
+		
+		break;
+		case 5:
+		//DiscoBlinkOnProgramButton
+		break;
+		case 6:
+			// if (programCounter == 1)
+			// {
+			// 	fill_solid(leds, NUM_LEDS, CRGB::Cyan);
+			// }
+			// EVERY_N_MILLISECONDS( random16(500, 2000) ) { 
+			// 	AddRipple(random8(NUM_LEDS));
+			// }
+			// ProcessRipple();	
+		break;
+		case 7:
+		SolidColorProgram(CRGB::Yellow);
+		break;
+		case 8:
+		SolidColorProgram(CRGB::Green);
+		break;
+		case 9:
+		SolidColorProgram(CRGB::Red);
+		break;
+		case 10:
+		SolidColorProgram(CRGB::DarkBlue);
+		break;
+		case 11:
+		SolidColorProgram(CRGB::DarkOrange);
+		break;
+		case 12:
+		SolidColorProgram(CRGB::Purple);
+		break;
+		case 13:
+		SolidColorProgram(CRGB::White);
+		break;
+
+
+		default:
+		break;
+	 }
 }

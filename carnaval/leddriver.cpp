@@ -1,23 +1,6 @@
 #include <Arduino.h>
 #include "leddriver.h"
 
-#define VOLTS          5
-#define MAX_MA       2000
-#define LED_PIN_1    9
-#define LED_PIN_2    10
-#define LED_PIN_3    11
-#define NUM_LEDS    104
-#define NUM_LEDS_PER_STRIP 26
-#define BRIGHTNESS  168
-#define LED_TYPE    WS2812B
-#define COLOR_ORDER GRB
-
-#define MENU_LED_1 0
-#define MENU_LED_2 1
-#define MENU_LED_3 2
-#define MENU_LED_4 3
-#define MENU_LED_5 4
-
 
 CRGB leds[NUM_LEDS];
 CRGB ledsOriginal[NUM_LEDS];
@@ -26,8 +9,6 @@ uint8_t stepFlags[NUM_LEDS];
 
 CRGBPalette16 currentPalette;
 TBlendType    currentBlending;
-
-enum { CENTER = 1, LEFT = 2, RIGHT = 3, FADEUP = 4, FADEDOWN = 5};
 
 void InitLedDriver() {
 	FastLED.setMaxPowerInVoltsAndMilliamps(VOLTS,MAX_MA);
@@ -38,7 +19,14 @@ void InitLedDriver() {
     FastLED.setBrightness(  BRIGHTNESS );
 }
 
+void Show() {
+	FastLED.show();
+}
 
+void DoDelay(unsigned long ms)
+{
+	FastLED.delay(ms);
+}
 
 void FillLEDsFromPaletteColors( uint8_t colorIndex)
 {
@@ -153,85 +141,24 @@ void CopyStrip(uint8_t origin, uint8_t target) {
 	}
 }
 
-void ShiftAllLedsUp()
+void ShiftLedsUp(int end, int start)
 {
-	for (int pos = NUM_LEDS; pos > 0; pos--)
+	for (int pos = start; pos > end; pos--)
 	{
 		leds[pos] = leds[pos - 1];
 	}
 }
-
-void Biertje(uint16_t programCounter)
-{   
-	if (programCounter % 10 == 0)
-	{
-		uint16_t index = programCounter / 10;
-		if (index < NUM_LEDS_PER_STRIP)
-		{
-			ShiftAllLedsUp();
-			
-			leds[0] = CRGB ( 255, 159, 0 );
-			uint8_t foam = (index / 100.0) * 30;
-
-			leds[NUM_LEDS_PER_STRIP] = CRGB ( 255, 159, 0 );
-			//leds[2 * NUM_LEDS_PER_STRIP] = CRGB ( 255, 159, 0 );
-			for (int i = 0; i < foam; i++) 
-			{
-				leds[index - i] = CRGB::White;
-				leds[index + NUM_LEDS_PER_STRIP - i] = CRGB::White;
-			}
-		} 
-		if (index >= NUM_LEDS_PER_STRIP && index < 2 * NUM_LEDS_PER_STRIP)
-		{
-			
-		}
-	}
-}	
-// 	uint16_t index = programCounter / 10;
-// 	if (index > NUM_LEDS) {
-// 		if (random8(5) == 0) {
-// 			setRandomPixelToOriginalColor();
-//      		fadeLightBy(leds, NUM_LEDS, 1);
-
-// 		}
-//  	} else 
-// 	{
-		
-// 		uint8_t beerCounter = 0;
-// 		if (index > NUM_LEDS_PER_STRIP) uint8_t beerCounter = 1;
-// 		if (index > 2 * NUM_LEDS_PER_STRIP) uint8_t beerCounter = 2;
-
-// 		uint8_t foam = ((index - beerCounter * NUM_LEDS_PER_STRIP) / 3) + 1;
-// 		for( int i = 0; i < NUM_LEDS_PER_STRIP; i++) {
-// 			if (i < index) 
-// 			{
-// 				if (i > (index - foam))
-// 				{
-// 					leds[i + beerCounter * NUM_LEDS_PER_STRIP] = CRGB::White;
-					
-// 				} else
-// 				{
-// 					leds[i + beerCounter * NUM_LEDS_PER_STRIP] = CRGB ( 255, 159, 0 );
-// 				}
-				
-// 			} 
-// 			ledsOriginal[i + NUM_LEDS_PER_STRIP] = ledsOriginal[i] = leds[i];
-// 		}
-		
-// 		//ReverseDoubleLeds();
-// 	}
-
-	
-// }
-
-void Show() {
-	FastLED.show();
-}
-
-void DoDelay(unsigned long ms)
+// 104, 78
+void ShiftLedsAround(uint8_t end, uint8_t start)
 {
-	FastLED.delay(ms);
+	ledsOriginal[start] = leds[start];
+	for (uint8_t pos = start; pos > end; pos--)
+	{
+		leds[pos] = leds[pos - 1];
+	}
+	leds[end] = ledsOriginal[start];
 }
+
 
 
 void Show_Cycle(uint8_t cycle) {
@@ -257,8 +184,8 @@ void Show_Cycle(uint8_t cycle) {
 		case 3:
 		//Heartbeat
 		leds[MENU_LED_1] = CRGB ( 255, 0, 0 );
-		leds[MENU_LED_2] = CRGB ( 255, 0, 0 );
 		leds[MENU_LED_3] = CRGB ( 255, 0, 0 );
+		leds[MENU_LED_5] = CRGB ( 255, 0, 0 );
 		break;
 		case 4:
 		//DiscoHooker
@@ -318,7 +245,12 @@ void Show_Cycle(uint8_t cycle) {
 
 		
 	}
-	ReverseDoubleLeds();
+	leds[MENU_LED_1 + NUM_LEDS_PER_STRIP] = leds[MENU_LED_1];
+	leds[MENU_LED_2 + NUM_LEDS_PER_STRIP] = leds[MENU_LED_2];
+	leds[MENU_LED_3 + NUM_LEDS_PER_STRIP] = leds[MENU_LED_3];
+	leds[MENU_LED_4 + NUM_LEDS_PER_STRIP] = leds[MENU_LED_4];
+	leds[MENU_LED_5 + NUM_LEDS_PER_STRIP] = leds[MENU_LED_5];
+	//ReverseDoubleLeds();
 	// leds[NUM_LEDS-1-MENU_LED_1] = leds[MENU_LED_1];
 	// leds[NUM_LEDS-1-MENU_LED_2] = leds[MENU_LED_2];
 	// leds[NUM_LEDS-1-MENU_LED_3] = leds[MENU_LED_3];
@@ -326,84 +258,71 @@ void Show_Cycle(uint8_t cycle) {
 	// leds[NUM_LEDS-1-MENU_LED_5] = leds[MENU_LED_5];
 }
 
-void ExecuteProgram(uint8_t cycle, uint16_t programCounter)
-{
-	 switch (cycle){
-	  case 0:
-		Biertje(programCounter);
-		break;
-		//DiscoNormal
-		case 1:		
-		Serial.println("Case 1, solid white");
-
-		fill_solid( currentPalette, 16, CRGB::Yellow);
-		currentBlending = NOBLEND;
-		FillLEDsFromPaletteColors( 0);
-		break;
-		case 2:
-		//Defibrillator
-		break;
-		case 3:
-		//Heartbeat
-		currentPalette = RainbowColors_p;
-		currentBlending = LINEARBLEND;
-    
-  		FillLEDsFromPaletteColors( programCounter);
-
-		break;
-		case 4:
-		//DiscoHooker
-		leds[MENU_LED_1] = CRGB ( 200, 0, 0 );
-		leds[MENU_LED_3] = CRGB ( 0, 0, 129 );		
-		leds[MENU_LED_5] = CRGB ( 200, 129, 0 );
-		break;
-		case 5:
-		//DiscoBlinkOnProgramButton
-		leds[MENU_LED_1] = CRGB ( 255, 0, 0 );
-		leds[MENU_LED_2] = CRGB ( 0, 255, 0 );
-		leds[MENU_LED_3] = CRGB ( 0, 0, 255 );
-		break;
-		case 6:
-			if (programCounter == 1)
-			{
-				fill_solid(leds, NUM_LEDS, CRGB::Cyan);
-			}
-			EVERY_N_MILLISECONDS( random16(500, 2000) ) { 
-				AddRipple(random8(NUM_LEDS));
-			}
-			ProcessRipple();	
-		break;
-		case 7:
-		fill_solid(leds, NUM_LEDS, CRGB::Yellow);
-		break;
-		case 8:
-		fill_solid(leds, NUM_LEDS, CRGB::Green);
-		break;
-		case 9:
-		fill_solid(leds, NUM_LEDS, CRGB::Red);
-		break;
-		case 10:
-		fill_solid(leds, NUM_LEDS, CRGB::DarkBlue);
-		break;
-		case 11:
-		fill_solid(leds, NUM_LEDS, CRGB::DarkOrange);
-		break;
-		case 12:
-		fill_solid(leds, NUM_LEDS, CRGB::Purple);
-		break;
-		case 13:
-		fill_solid(leds, NUM_LEDS, CRGB::White);
-		break;
-
-
-		default:
-		break;
-	 }
-}
-
 
 void setRandomPixelToOriginalColor()
 {
 	int pos = random16(NUM_LEDS);
 	leds[pos] = ledsOriginal[pos];
+}
+
+void BiertjeProgram(uint16_t programCounter)
+{   
+	uint16_t index = programCounter / 6;
+	if (programCounter % 6 == 0)
+	{
+		
+		if (index < NUM_LEDS_PER_STRIP)
+		{
+			ShiftLedsUp(0, NUM_LEDS_PER_STRIP * 2);
+			
+			leds[0] = CRGB ( 255, 159, 0 );
+			leds[NUM_LEDS_PER_STRIP] = CRGB ( 255, 159, 0 );
+
+			uint8_t foam = (index / 100.0) * 30;
+
+			for (int i = 0; i < foam; i++) 
+			{
+				leds[index - i] = CRGB::White;
+				leds[index + NUM_LEDS_PER_STRIP - i] = CRGB::White;
+			}
+		} 
+		if (index >= NUM_LEDS_PER_STRIP && index < 2 * NUM_LEDS_PER_STRIP)
+		{
+			ShiftLedsUp(2 * NUM_LEDS_PER_STRIP, 3 * NUM_LEDS_PER_STRIP);
+			leds[2 * NUM_LEDS_PER_STRIP] = CRGB ( 255, 159, 0 );
+			uint8_t foam = ((index - NUM_LEDS_PER_STRIP) / 100.0) * 30;
+
+			for (int i = 0; i < foam; i++) 
+			{
+				leds[NUM_LEDS_PER_STRIP + index - i] = CRGB::White;
+			}
+		}
+		if (index == 2*NUM_LEDS_PER_STRIP)
+		{
+			for (int j=0; j<15;j++){
+				ShiftLedsUp(3 * NUM_LEDS_PER_STRIP, NUM_LEDS);
+		
+				leds[3 * NUM_LEDS_PER_STRIP] = CRGB ( 255, 159, 0 );
+			
+				uint8_t foam = ((index + j- 2*NUM_LEDS_PER_STRIP) / 100.0) * 30;
+
+				for (int i = 0; i < foam; i++) 
+				{
+					leds[NUM_LEDS_PER_STRIP + index + j - i] = CRGB::White;
+				}
+			}
+		}
+	}
+	if (index> 2*NUM_LEDS_PER_STRIP){
+			ShiftLedsAround(3 * NUM_LEDS_PER_STRIP, NUM_LEDS - 1);
+			EVERY_N_MILLISECONDS( random16(500, 2000) ) { 
+				AddRipple(random8(3*NUM_LEDS_PER_STRIP));
+			}
+			ProcessRipple();	
+	}
+}	
+
+void SolidColorProgram(CRGB color)
+{
+
 }

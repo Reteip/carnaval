@@ -1,4 +1,3 @@
-#include <JC_Button.h>
-#include <FastLED.h>
-#include "leddriver.h"
-
+/*
+Empty on purpose. Use only to compile and deploy
+*/
