@@ -2,6 +2,7 @@
 #include "looper.h"
 #include "leddriver.h"
 #include <JC_Button.h>
+#include "rgbtohsv.h"
 
 Button menuBtn(2);
 Button programBtn(4);
@@ -33,7 +34,8 @@ void setup()
     
     Serial.println("SETUP DONE");
     STATE=PROGRAM;
-    CYCLE = 8;
+    PROGRAM_INDEX=3;
+    CYCLE = 7;
 }
 
 void loop()
@@ -201,7 +203,8 @@ void ExecuteProgram()
 
 		case 6 ... 13:
       Serial.println(CYCLE);
-	  	SolidColorProgram(MenuColors[CYCLE - 6], PROGRAM_INDEX);
+      
+	  	SolidColorProgram(MenuColors[CYCLE - 6], PROGRAM_INDEX, PROGRAM_COUNTER);
 		break;
 
 		default:
@@ -219,7 +222,7 @@ void ExecuteInProgramPress()
     case 1 ... 5:
 		break;
 		case 6 ... 13:
-      programBtn.lastChange();
+      PROGRAM_COUNTER = 0;
       PROGRAM_INDEX+=1;
 		break;
 	 }

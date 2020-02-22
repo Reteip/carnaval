@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include "leddriver.h"
 
-
 CRGB leds[NUM_LEDS];
 CRGB ledsOriginal[NUM_LEDS];
 uint8_t directionFlags[NUM_LEDS];
@@ -40,13 +39,16 @@ void FillLEDsFromPaletteColors( uint8_t colorIndex)
 }
 
 void SetStripOff() {
-    fill_solid( currentPalette, 16, CRGB::Black);
-    FillLEDsFromPaletteColors( 0);
+    FillAllLedsSolid(CRGB::Black);
+    FastLED.show();   
+}
+
+void FillAllLedsSolid( const struct CRGB& color)
+{
 	for (int pos=0; pos < NUM_LEDS; pos++)
 	{
-		ledsOriginal[pos] = leds[pos];
+		leds[pos] = ledsOriginal[pos] = color;
 	}
-    FastLED.show();   
 }
 
 void RainbowProgram(uint8_t index) {
@@ -117,10 +119,28 @@ void ProcessSparkle()
 	}
 }
 
+void ProcessColorSparkle(CRGB color)
+{
+	for( int pos = 0; pos < NUM_LEDS; pos++) { 
+		if (directionFlags[pos] == CENTER)
+		{
+			if (stepFlags > 0)
+			{
+				leds[pos].subtractFromRGB(1);
+				stepFlags[pos]-=1;
+			} else
+			{
+				leds[pos] = color;
+				directionFlags[pos] == NONE;
+			}
+			
+		}
+	}
+}
 
 void ProcessRipple()
 {
-	uint8_t BrightAmount = 16;
+	uint8_t BrightAmount = 3;
 	for( int pos = 0; pos < NUM_LEDS; pos++) { 
 		if (directionFlags[pos] == CENTER)
 		{
@@ -136,8 +156,7 @@ void ProcessRipple()
 				stepFlags[pos - 1] = stepFlags[pos] - 1; 
 			}
 			directionFlags[pos] = FADEUP;
-			stepFlags[pos] = 16;
-			ledsOriginal[pos] = leds[pos];
+			stepFlags[pos] = BrightAmount;
 
 		}
 		if (directionFlags[pos] == RIGHT) {
@@ -146,8 +165,7 @@ void ProcessRipple()
 				stepFlags[pos + 1] = stepFlags[pos] - 1; 
 			}
 			directionFlags[pos] = FADEUP;
-			stepFlags[pos] = 16;
-			ledsOriginal[pos] = leds[pos];
+			stepFlags[pos] = BrightAmount;
 		}
 		if (directionFlags[pos] == FADEUP) 
 		{
@@ -186,9 +204,8 @@ void AddRipple(uint8_t center)
 {
 	if (directionFlags[center] == 0)
 	{
-		directionFlags[center] = 1;
-		ledsOriginal[center] = leds[center];
-		stepFlags[center] = 16;
+		directionFlags[center] = CENTER;
+		stepFlags[center] = RIPPLE_STEPS;
 	}
 }
 
@@ -337,14 +354,14 @@ void BiertjeProgram(uint16_t programCounter)
 	}
 	if (index> 2*NUM_LEDS_PER_STRIP){
 			ShiftLedsAround(3 * NUM_LEDS_PER_STRIP, NUM_LEDS - 1);
-			EVERY_N_MILLISECONDS( random16(500, 2000) ) { 
-				AddRipple(random8(3*NUM_LEDS_PER_STRIP));
-			}
-			ProcessRipple();	
+			// EVERY_N_MILLISECONDS( random16(500, 2000) ) { 
+			// 	AddRipple(random8(3*NUM_LEDS_PER_STRIP));
+			// }
+			// //ProcessRipple();	
 	}
 }	
 
-void SolidColorProgram(CRGB color, uint8_t program_index)
+void SolidColorProgram(CRGB color, uint8_t program_index,uint16_t programCounter)
 {
 	switch (program_index)
 	{
@@ -360,17 +377,29 @@ void SolidColorProgram(CRGB color, uint8_t program_index)
 		EVERY_N_MILLISECONDS(30) {
 			if (leds[0])
 			{
-				fill_solid(leds,NUM_LEDS,CRGB::Black);
+				FillAllLedsSolid(CRGB::Black);
+				
 			} else
 			{
-				fill_solid(leds,NUM_LEDS,CRGB::White);
+				FillAllLedsSolid(CRGB::White);
+				
 			}
 		}
 		
 	break;
 	default:
-		fill_solid(leds, NUM_LEDS, color);
+		if (programCounter < 5) FillAllLedsSolid(color);
+		else {
+			EVERY_N_SECONDS( random8(2, 30) ) { 
+					AddRipple(random8(NUM_LEDS));
+			}
+			EVERY_N_MILLISECONDS(10)
+			{
+				ProcessColorSparkle(color);
+				ShiftLedsAround(0, NUM_LEDS);
 
+			}
+		}
 		break;
 	}
 }
