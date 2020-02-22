@@ -59,14 +59,14 @@ void RainbowProgram(uint8_t index) {
 
 void ProcessSparkle()
 {
-	uint8_t BrightAmount = 16;
+	uint8_t Steps = 16;
 	for( int pos = 0; pos < NUM_LEDS; pos++) { 
 		if (directionFlags[pos] == CENTER)
 		{
 			directionFlags[pos - 1] = LEFT;
-			stepFlags[pos - 1] = 2;
+			stepFlags[pos - 1] = random8(Steps);;
 			directionFlags[pos + 1] = RIGHT;
-			stepFlags[pos +1 ] = 2;
+			stepFlags[pos +1 ] = random8(Steps);;
 			directionFlags[pos] = FADEUP;
 		}
 		if (directionFlags[pos] == LEFT) {
@@ -75,9 +75,7 @@ void ProcessSparkle()
 				stepFlags[pos - 1] = stepFlags[pos] - 1; 
 			}
 			directionFlags[pos] = FADEUP;
-			stepFlags[pos] = 2;
-			ledsOriginal[pos] = leds[pos];
-
+			stepFlags[pos] = random8(Steps);
 		}
 		if (directionFlags[pos] == RIGHT) {
 			if (stepFlags[pos] > 1) {
@@ -85,28 +83,30 @@ void ProcessSparkle()
 				stepFlags[pos + 1] = stepFlags[pos] - 1; 
 			}
 			directionFlags[pos] = FADEUP;
-			stepFlags[pos] = 16;
-			ledsOriginal[pos] = leds[pos];
+			stepFlags[pos] = random8(Steps);
 		}
 		if (directionFlags[pos] == FADEUP) 
 		{
+			if (stepFlags[pos] == Steps)
+			{
+				leds[pos] = MenuColors[random8(7)];
+			}
+
 			if (stepFlags[pos] > 0)
 			{
-					leds[pos] = MenuColors[random8(8)];
-
-					stepFlags[pos]-=1;
+				stepFlags[pos]-=1;
 			} else 
 			{
 				directionFlags[pos] = FADEDOWN;
 				leds[pos] = ledsOriginal[pos];
-				stepFlags[pos] = 16 - stepFlags[pos];
+				stepFlags[pos] = Steps - stepFlags[pos];
 			}
 		}
 		if (directionFlags[pos] == FADEDOWN)
 		{
 			if (stepFlags[pos] > 0)
 			{
-				leds[pos] = MenuColors[random8(8)];
+				leds[pos] = MenuColors[random8(7)];
 				stepFlags[pos]-=1;
 			} else
 			{
@@ -224,8 +224,6 @@ void ShiftLedsAround(uint8_t end, uint8_t start)
 	leds[end] = ledsOriginal[start];
 }
 
-
-
 void Show_Cycle(uint8_t cycle) {
   switch (cycle){
 	  case 0:
@@ -233,6 +231,7 @@ void Show_Cycle(uint8_t cycle) {
 		leds[MENU_LED_1] = CRGB ( 255, 255, 255 );		
 		leds[MENU_LED_2] = CRGB ( 255, 159, 0 );
 		leds[MENU_LED_3] = CRGB ( 255, 159, 0 );	
+
 		break;
 		//DiscoNormal
 		case 1:		
@@ -272,9 +271,7 @@ void Show_Cycle(uint8_t cycle) {
 		break;
 		
 		default:
-		break;
-
-		
+		break;		
 	}
 	leds[MENU_LED_1 + NUM_LEDS_PER_STRIP] = leds[MENU_LED_1];
 	leds[MENU_LED_2 + NUM_LEDS_PER_STRIP] = leds[MENU_LED_2];
@@ -349,16 +346,31 @@ void BiertjeProgram(uint16_t programCounter)
 
 void SolidColorProgram(CRGB color, uint8_t program_index)
 {
-	if (program_index == 0)
+	switch (program_index)
 	{
-			EVERY_N_MILLISECONDS( random16(500, 2000) ) { 
-				AddRipple(random8(3*NUM_LEDS_PER_STRIP));
+	case 0:
+		EVERY_N_MILLISECONDS( random16(100, 1500) ) { 
+				AddRipple(random8(NUM_LEDS));
+		}
+		EVERY_N_MILLISECONDS(random8(30)) { 
+			ProcessSparkle();	
+		}
+		break;
+	case 1:
+		EVERY_N_MILLISECONDS(30) {
+			if (leds[0])
+			{
+				fill_solid(leds,NUM_LEDS,CRGB::Black);
+			} else
+			{
+				fill_solid(leds,NUM_LEDS,CRGB::White);
 			}
-			EVERY_N_MILLISECONDS(random8()) { 
-				ProcessSparkle();	
-			}
-	} else 
-	{
+		}
+		
+	break;
+	default:
 		fill_solid(leds, NUM_LEDS, color);
+
+		break;
 	}
 }

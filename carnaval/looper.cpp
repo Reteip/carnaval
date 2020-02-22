@@ -55,7 +55,10 @@ void ExecuteState()
     switch (STATE)
     {
       case MENU:
-        Show_Cycle(CYCLE);
+        if (PROGRAM_COUNTER == 10) 
+        {
+          SetStripOff();
+        }
         break;
       case PROGRAM:    
         ExecuteProgram();   
@@ -80,13 +83,18 @@ void SwitchState()
     switch (STATE)
     {
       case MENU:
-        
+        if (programBtn.pressedFor(LONG_PRESS - 100))
+        {
+          Show_Cycle(CYCLE);
+        }
         if (menuBtn.wasReleased()) 
         {
           SetStripOff();
           CYCLE+=1;
           if (CYCLE > MAX_CYCLE) CYCLE = 0;
           Serial.println("Menu up " );
+          PROGRAM_COUNTER = 0;
+          Show_Cycle(CYCLE);
         }
         if (programBtn.wasReleased())    // if the button was released, change the LED state
         {
@@ -96,18 +104,21 @@ void SwitchState()
             CYCLE-=1;
           }
           Serial.println("Menu down ");
+          PROGRAM_COUNTER = 0;
+          Show_Cycle(CYCLE);
         } else if (programBtn.pressedFor(LONG_PRESS))
         {
           Serial.println("To Program ");
           STATE = TO_PROGRAM;
           PROGRAM_COUNTER = 0;
           PROGRAM_INDEX = 0;
+
         }
         if (menuBtn.pressedFor(ERROR_PRESS)) {
           Serial.println("ERROR ");
           STATE = ERROR;
         }
- 
+      
       break;
      
       case PROGRAM:
@@ -122,8 +133,8 @@ void SwitchState()
         }
       break;
       case TO_PROGRAM:
-        SetStripOff();
         PROGRAM_INDEX = 0;
+
         if (programBtn.wasReleased())  {
           Serial.println("Enter program");
           STATE = PROGRAM;
@@ -187,17 +198,9 @@ void ExecuteProgram()
 		case 5:
 		//DiscoBlinkOnProgramButton
 		break;
-		// case 6:
-		// 	// if (programCounter == 1)
-		// 	// {
-		// 	// 	fill_solid(leds, NUM_LEDS, CRGB::Cyan);
-		// 	// }
-		// 	// EVERY_N_MILLISECONDS( random16(500, 2000) ) { 
-		// 	// 	AddRipple(random8(NUM_LEDS));
-		// 	// }
-		// 	// ProcessRipple();	
-		// break;
+
 		case 6 ... 13:
+      Serial.println(CYCLE);
 	  	SolidColorProgram(MenuColors[CYCLE - 6], PROGRAM_INDEX);
 		break;
 
@@ -213,9 +216,9 @@ void ExecuteInProgramPress()
 		  SetStripOff();
       PROGRAM_COUNTER = 0;
 		break;
-    case 1 ... 6:
+    case 1 ... 5:
 		break;
-		case 7 ... 13:
+		case 6 ... 13:
       programBtn.lastChange();
       PROGRAM_INDEX+=1;
 		break;
