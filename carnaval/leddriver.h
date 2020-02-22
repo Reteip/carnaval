@@ -51,6 +51,6 @@ void FillAllLedsWithDottedRainbow();
 void FadeAllLedsBy(uint8_t fadeBy);
 void SolidColorProgram(CHSV color, uint8_t program_index,uint16_t programCounter);
 void BiertjeProgram(uint16_t programCounter);
-void ScreenSaver(uint16_t PROGRAM_COUNTER);
+void ScreenSaver();
 
 #endif

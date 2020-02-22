@@ -77,7 +77,7 @@ void RainbowProgram(uint8_t index) {
 
 }
 
-void ProcessSparkle()
+void ProcessSparkle(CHSV color)
 {
 	uint8_t Steps = 16;
 	for( int pos = 0; pos < NUM_LEDS; pos++) { 
@@ -109,7 +109,7 @@ void ProcessSparkle()
 		{
 			if (stepFlags[pos] == Steps)
 			{
-				leds[pos] = MenuColors[random8(7)];
+				leds[pos] = color;
 			}
 
 			if (stepFlags[pos] > 0)
@@ -126,7 +126,7 @@ void ProcessSparkle()
 		{
 			if (stepFlags[pos] > 0)
 			{
-				leds[pos] = MenuColors[random8(7)];
+				leds[pos] = color;
 				stepFlags[pos]-=1;
 			} else
 			{
@@ -314,14 +314,13 @@ void setRandomPixelToOriginalColor()
 	leds[pos] = ledsOriginal[pos];
 }
 
-void ScreenSaver(uint16_t programCounter)
+void ScreenSaver()
 {
-	FillAllLedsSolid(CHSV(165, 255, 255));
-	EVERY_N_MILLISECONDS( random16(100, 1500) ) { 
+	EVERY_N_SECONDS( random8(1, 10) ) { 
 		AddRipple(random8(NUM_LEDS));
 	}
 	EVERY_N_MILLISECONDS(random8(30)) { 
-		ProcessSparkle();	
+		ProcessSparkle(CHSV(random8(145,175), 255, random8(0,150)));	
 	}
 }
 
@@ -387,11 +386,11 @@ void SolidColorProgram(CHSV color, uint8_t program_index,uint16_t programCounter
 	switch (program_index)
 	{
 	case 0:
-		EVERY_N_MILLISECONDS( random16(100, 1500) ) { 
+		EVERY_N_MILLISECONDS( random16(100, 800) ) { 
 				AddRipple(random8(NUM_LEDS));
 		}
 		EVERY_N_MILLISECONDS(random8(30)) { 
-			ProcessSparkle();	
+			ProcessSparkle(MenuColors[random8(7)]);	
 		}
 		break;
 	case 1:

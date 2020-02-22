@@ -11,7 +11,7 @@ Button programBtn(4);
 #define LONG_PRESS 1000
 #define ERROR_PRESS 10000
 #define MAX_CYCLE 13
-#define SLEEP_TIME 1000
+#define SLEEP_TIME 3000
 
 enum states_t {MENU, PROGRAM, TO_PROGRAM, IN_PROGRAM_PRESS, SLEEP, ERROR};
 static states_t STATE;
@@ -124,10 +124,7 @@ void SwitchState()
           Serial.println("ERROR ");
           STATE = ERROR;
         }
-        if (menuBtn.lastChange() > SLEEP_TIME)
-        {
-           ScreenSaver(PROGRAM_COUNTER);
-        }
+        ScreenSaver();
       
       break;
      
