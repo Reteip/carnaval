@@ -11,10 +11,10 @@ Button programBtn(4);
 #define ERROR_PRESS 10000
 #define MAX_CYCLE 13
 
-enum states_t {MENU, PROGRAM, TO_PROGRAM, ERROR};
+enum states_t {MENU, PROGRAM, TO_PROGRAM, IN_PROGRAM_PRESS, ERROR};
 static states_t STATE;
 static uint8_t CYCLE; 
-static uint8_t LOOPINDEX; // 255
+static uint8_t PROGRAM_INDEX; 
 static uint8_t UPDATES_PER_SECOND;
 
 static uint16_t PROGRAM_COUNTER; // 65536
@@ -33,14 +33,12 @@ void setup()
     
     Serial.println("SETUP DONE");
     STATE=PROGRAM;
-    CYCLE = 0;
+    CYCLE = 8;
 }
 
 void loop()
 {
 
-    LOOPINDEX = LOOPINDEX + 1; /* motion speed */
-    
     PROGRAM_COUNTER = PROGRAM_COUNTER + 1;
     if (PROGRAM_COUNTER == 0) Serial.println("Program Counter Reset");
     menuBtn.read(); // read the button
@@ -64,6 +62,9 @@ void ExecuteState()
         break;
       case TO_PROGRAM:
         SetStripOff();
+        break;
+      case IN_PROGRAM_PRESS:
+        ExecuteInProgramPress();
         break;
       case ERROR:
         SetStripOff();
@@ -100,6 +101,7 @@ void SwitchState()
           Serial.println("To Program ");
           STATE = TO_PROGRAM;
           PROGRAM_COUNTER = 0;
+          PROGRAM_INDEX = 0;
         }
         if (menuBtn.pressedFor(ERROR_PRESS)) {
           Serial.println("ERROR ");
@@ -110,8 +112,7 @@ void SwitchState()
      
       case PROGRAM:
         if (programBtn.wasReleased())  {
-          PROGRAM_COUNTER = 0;
-          SetStripOff();
+          STATE=IN_PROGRAM_PRESS;
         }
         if (menuBtn.wasReleased())    // if the button was released, change the LED state
         {
@@ -122,6 +123,7 @@ void SwitchState()
       break;
       case TO_PROGRAM:
         SetStripOff();
+        PROGRAM_INDEX = 0;
         if (programBtn.wasReleased())  {
           Serial.println("Enter program");
           STATE = PROGRAM;
@@ -134,6 +136,9 @@ void SwitchState()
           Serial.println("ERROR ");
           STATE = ERROR;
         }
+      break;
+      case IN_PROGRAM_PRESS:
+          STATE=PROGRAM;
       break;
       case ERROR:
          if (programBtn.wasReleased())  {
@@ -154,7 +159,7 @@ void ExecuteProgram()
 {
 	 switch (CYCLE){
 	  case 0:
-		BiertjeProgram(PROGRAM_COUNTER);
+		  BiertjeProgram(PROGRAM_COUNTER);
 		break;
 		//DiscoNormal
 		case 1:		
@@ -182,40 +187,37 @@ void ExecuteProgram()
 		case 5:
 		//DiscoBlinkOnProgramButton
 		break;
-		case 6:
-			// if (programCounter == 1)
-			// {
-			// 	fill_solid(leds, NUM_LEDS, CRGB::Cyan);
-			// }
-			// EVERY_N_MILLISECONDS( random16(500, 2000) ) { 
-			// 	AddRipple(random8(NUM_LEDS));
-			// }
-			// ProcessRipple();	
+		// case 6:
+		// 	// if (programCounter == 1)
+		// 	// {
+		// 	// 	fill_solid(leds, NUM_LEDS, CRGB::Cyan);
+		// 	// }
+		// 	// EVERY_N_MILLISECONDS( random16(500, 2000) ) { 
+		// 	// 	AddRipple(random8(NUM_LEDS));
+		// 	// }
+		// 	// ProcessRipple();	
+		// break;
+		case 6 ... 13:
+	  	SolidColorProgram(MenuColors[CYCLE - 6], PROGRAM_INDEX);
 		break;
-		case 7:
-		SolidColorProgram(CRGB::Yellow);
-		break;
-		case 8:
-		SolidColorProgram(CRGB::Green);
-		break;
-		case 9:
-		SolidColorProgram(CRGB::Red);
-		break;
-		case 10:
-		SolidColorProgram(CRGB::DarkBlue);
-		break;
-		case 11:
-		SolidColorProgram(CRGB::DarkOrange);
-		break;
-		case 12:
-		SolidColorProgram(CRGB::Purple);
-		break;
-		case 13:
-		SolidColorProgram(CRGB::White);
-		break;
-
 
 		default:
+		break;
+	 }
+}
+
+void ExecuteInProgramPress()
+{
+	 switch (CYCLE){
+	  case 0:
+		  SetStripOff();
+      PROGRAM_COUNTER = 0;
+		break;
+    case 1 ... 6:
+		break;
+		case 7 ... 13:
+      programBtn.lastChange();
+      PROGRAM_INDEX+=1;
 		break;
 	 }
 }

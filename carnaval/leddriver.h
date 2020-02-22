@@ -20,7 +20,11 @@
 #define MENU_LED_3 2
 #define MENU_LED_4 3
 #define MENU_LED_5 4
- 
+
+const CRGB MenuColors[8] =
+		{  CRGB::Cyan, CRGB::Yellow, CRGB::Green, CRGB::Red, 
+		CRGB::DarkBlue, CRGB::DarkOrange, CRGB::Purple, CRGB::White };
+
 
 enum { CENTER = 1, LEFT = 2, RIGHT = 3, FADEUP = 4, FADEDOWN = 5};
 
@@ -36,7 +40,7 @@ void DoDelay(unsigned long ms);
 
 void Show();
 
-void SolidColorProgram(CRGB color);
+void SolidColorProgram(CRGB color, uint8_t program_index);
 void BiertjeProgram(uint16_t programCounter);
 
 // void colortwinkles();

@@ -17,6 +17,7 @@ void InitLedDriver() {
 	FastLED.addLeds<LED_TYPE, LED_PIN_3, COLOR_ORDER>(leds, 2 * NUM_LEDS_PER_STRIP, NUM_LEDS_PER_STRIP * 2).setCorrection( TypicalLEDStrip );
 
     FastLED.setBrightness(  BRIGHTNESS );
+
 }
 
 void Show() {
@@ -41,6 +42,10 @@ void FillLEDsFromPaletteColors( uint8_t colorIndex)
 void SetStripOff() {
     fill_solid( currentPalette, 16, CRGB::Black);
     FillLEDsFromPaletteColors( 0);
+	for (int pos=0; pos < NUM_LEDS; pos++)
+	{
+		ledsOriginal[pos] = leds[pos];
+	}
     FastLED.show();   
 }
 
@@ -52,8 +57,7 @@ void RainbowProgram(uint8_t index) {
 
 }
 
-
-void ProcessRipple()
+void ProcessSparkle()
 {
 	uint8_t BrightAmount = 16;
 	for( int pos = 0; pos < NUM_LEDS; pos++) { 
@@ -63,6 +67,67 @@ void ProcessRipple()
 			stepFlags[pos - 1] = 2;
 			directionFlags[pos + 1] = RIGHT;
 			stepFlags[pos +1 ] = 2;
+			directionFlags[pos] = FADEUP;
+		}
+		if (directionFlags[pos] == LEFT) {
+			if (stepFlags[pos] > 1) {
+				directionFlags[pos - 1] = LEFT;
+				stepFlags[pos - 1] = stepFlags[pos] - 1; 
+			}
+			directionFlags[pos] = FADEUP;
+			stepFlags[pos] = 2;
+			ledsOriginal[pos] = leds[pos];
+
+		}
+		if (directionFlags[pos] == RIGHT) {
+			if (stepFlags[pos] > 1) {
+				directionFlags[pos + 1] = RIGHT;
+				stepFlags[pos + 1] = stepFlags[pos] - 1; 
+			}
+			directionFlags[pos] = FADEUP;
+			stepFlags[pos] = 16;
+			ledsOriginal[pos] = leds[pos];
+		}
+		if (directionFlags[pos] == FADEUP) 
+		{
+			if (stepFlags[pos] > 0)
+			{
+					leds[pos] = MenuColors[random8(8)];
+
+					stepFlags[pos]-=1;
+			} else 
+			{
+				directionFlags[pos] = FADEDOWN;
+				leds[pos] = ledsOriginal[pos];
+				stepFlags[pos] = 16 - stepFlags[pos];
+			}
+		}
+		if (directionFlags[pos] == FADEDOWN)
+		{
+			if (stepFlags[pos] > 0)
+			{
+				leds[pos] = MenuColors[random8(8)];
+				stepFlags[pos]-=1;
+			} else
+			{
+				leds[pos] = ledsOriginal[pos];
+				directionFlags[pos] = 0;
+			}
+		}
+	}
+}
+
+
+void ProcessRipple()
+{
+	uint8_t BrightAmount = 16;
+	for( int pos = 0; pos < NUM_LEDS; pos++) { 
+		if (directionFlags[pos] == CENTER)
+		{
+			directionFlags[pos - 1] = LEFT;
+			stepFlags[pos - 1] = 5;
+			directionFlags[pos + 1] = RIGHT;
+			stepFlags[pos +1 ] = 5;
 			directionFlags[pos] = FADEUP;
 		}
 		if (directionFlags[pos] == LEFT) {
@@ -200,46 +265,12 @@ void Show_Cycle(uint8_t cycle) {
 		leds[MENU_LED_3] = CRGB ( 0, 0, 255 );
 		break;
 		// Wit, roze, oranje, blauw, rood,groen, geel, lichtblauw
-		case 6:
-		leds[MENU_LED_1] = CRGB::Cyan;
-		leds[MENU_LED_2] = CRGB::Cyan;
-		leds[MENU_LED_3] = CRGB::Cyan;
+		case 6 ... 13:
+		leds[MENU_LED_1] = MenuColors[cycle - 6];
+		leds[MENU_LED_2] = MenuColors[cycle - 6];
+		leds[MENU_LED_3] = MenuColors[cycle - 6];
 		break;
-		case 7:
-		leds[MENU_LED_1] = CRGB::Yellow;
-		leds[MENU_LED_2] = CRGB::Yellow;
-		leds[MENU_LED_3] = CRGB::Yellow;
-		break;
-		case 8:
-		leds[MENU_LED_1] = CRGB::Green;
-		leds[MENU_LED_2] = CRGB::Green;
-		leds[MENU_LED_3] = CRGB::Green;
-		break;
-		case 9:
-		leds[MENU_LED_1] = CRGB::Red;
-		leds[MENU_LED_2] = CRGB::Red;
-		leds[MENU_LED_3] = CRGB::Red;
-		break;
-		case 10:
-		leds[MENU_LED_1] = CRGB::DarkBlue;
-		leds[MENU_LED_2] = CRGB::DarkBlue;
-		leds[MENU_LED_3] = CRGB::DarkBlue;
-		break;
-		case 11:
-		leds[MENU_LED_1] = CRGB::DarkOrange;
-		leds[MENU_LED_2] = CRGB::DarkOrange;
-		leds[MENU_LED_3] = CRGB::DarkOrange;
-		break;
-		case 12:
-		leds[MENU_LED_1] = CRGB::Purple;
-		leds[MENU_LED_2] = CRGB::Purple;
-		leds[MENU_LED_3] = CRGB::Purple;
-		break;
-		case 13:
-		leds[MENU_LED_1] = CRGB::White;
-		leds[MENU_LED_2] = CRGB::White;
-		leds[MENU_LED_3] = CRGB::White;
-		break;
+		
 		default:
 		break;
 
@@ -250,12 +281,6 @@ void Show_Cycle(uint8_t cycle) {
 	leds[MENU_LED_3 + NUM_LEDS_PER_STRIP] = leds[MENU_LED_3];
 	leds[MENU_LED_4 + NUM_LEDS_PER_STRIP] = leds[MENU_LED_4];
 	leds[MENU_LED_5 + NUM_LEDS_PER_STRIP] = leds[MENU_LED_5];
-	//ReverseDoubleLeds();
-	// leds[NUM_LEDS-1-MENU_LED_1] = leds[MENU_LED_1];
-	// leds[NUM_LEDS-1-MENU_LED_2] = leds[MENU_LED_2];
-	// leds[NUM_LEDS-1-MENU_LED_3] = leds[MENU_LED_3];
-	// leds[NUM_LEDS-1-MENU_LED_4] = leds[MENU_LED_4];
-	// leds[NUM_LEDS-1-MENU_LED_5] = leds[MENU_LED_5];
 }
 
 
@@ -322,7 +347,18 @@ void BiertjeProgram(uint16_t programCounter)
 	}
 }	
 
-void SolidColorProgram(CRGB color)
+void SolidColorProgram(CRGB color, uint8_t program_index)
 {
-
+	if (program_index == 0)
+	{
+			EVERY_N_MILLISECONDS( random16(500, 2000) ) { 
+				AddRipple(random8(3*NUM_LEDS_PER_STRIP));
+			}
+			EVERY_N_MILLISECONDS(random8()) { 
+				ProcessSparkle();	
+			}
+	} else 
+	{
+		fill_solid(leds, NUM_LEDS, color);
+	}
 }
