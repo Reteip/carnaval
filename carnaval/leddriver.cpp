@@ -33,7 +33,10 @@ void FillLEDsFromPaletteColors( uint8_t colorIndex)
     uint8_t brightness = 255;
     
     for( int i = 0; i < NUM_LEDS; i++) {
-        leds[i] = ColorFromPalette( currentPalette, colorIndex, brightness, currentBlending);
+		if (i%2==0)
+		{
+        	leds[i] = ColorFromPalette( currentPalette, colorIndex, brightness, currentBlending);
+		}
         colorIndex += 3;
     }
 }
@@ -50,6 +53,21 @@ void FillAllLedsSolid( const struct CRGB& color)
 		leds[pos] = ledsOriginal[pos] = color;
 	}
 }
+
+
+void FillAllLedsSolid( const struct CHSV& color)
+{
+	for (int pos=0; pos < NUM_LEDS; pos++)
+	{
+		leds[pos] = ledsOriginal[pos] = color;
+	}
+}
+
+void FadeAllLedsBy(uint8_t fadeBy)
+{
+    fadeLightBy(leds, NUM_LEDS, 10);
+}
+
 
 void RainbowProgram(uint8_t index) {
   currentPalette = RainbowColors_p;
@@ -119,22 +137,14 @@ void ProcessSparkle()
 	}
 }
 
-void ProcessColorSparkle(CRGB color)
+void ProcessColorSparkle(CHSV color)
 {
 	for( int pos = 0; pos < NUM_LEDS; pos++) { 
-		if (directionFlags[pos] == CENTER)
-		{
-			if (stepFlags > 0)
-			{
-				leds[pos].subtractFromRGB(1);
-				stepFlags[pos]-=1;
-			} else
-			{
-				leds[pos] = color;
-				directionFlags[pos] == NONE;
-			}
-			
-		}
+		
+			CHSV newColor = color;
+			newColor.s = random8(190,255);
+			leds[pos] = newColor;
+		
 	}
 }
 
@@ -259,8 +269,8 @@ void Show_Cycle(uint8_t cycle) {
 		case 2:
 		//Defibrillator
 		leds[MENU_LED_1] = CRGB ( 255, 255, 255 );
-		leds[MENU_LED_2] = CRGB ( 255, 255, 255 );
-		leds[MENU_LED_3] = CRGB ( 255, 255, 255 );	
+		leds[MENU_LED_3] = CRGB ( 255, 255, 255 );
+		leds[MENU_LED_5] = CRGB ( 255, 255, 255 );	
 		break;
 		case 3:
 		//Heartbeat
@@ -302,6 +312,17 @@ void setRandomPixelToOriginalColor()
 {
 	int pos = random16(NUM_LEDS);
 	leds[pos] = ledsOriginal[pos];
+}
+
+void ScreenSaver(uint16_t programCounter)
+{
+	FillAllLedsSolid(CHSV(165, 255, 255));
+	EVERY_N_MILLISECONDS( random16(100, 1500) ) { 
+		AddRipple(random8(NUM_LEDS));
+	}
+	EVERY_N_MILLISECONDS(random8(30)) { 
+		ProcessSparkle();	
+	}
 }
 
 void BiertjeProgram(uint16_t programCounter)
@@ -361,7 +382,7 @@ void BiertjeProgram(uint16_t programCounter)
 	}
 }	
 
-void SolidColorProgram(CRGB color, uint8_t program_index,uint16_t programCounter)
+void SolidColorProgram(CHSV color, uint8_t program_index,uint16_t programCounter)
 {
 	switch (program_index)
 	{
@@ -390,15 +411,12 @@ void SolidColorProgram(CRGB color, uint8_t program_index,uint16_t programCounter
 	default:
 		if (programCounter < 5) FillAllLedsSolid(color);
 		else {
-			EVERY_N_SECONDS( random8(2, 30) ) { 
-					AddRipple(random8(NUM_LEDS));
-			}
-			EVERY_N_MILLISECONDS(10)
-			{
-				ProcessColorSparkle(color);
-				ShiftLedsAround(0, NUM_LEDS);
-
-			}
+			
+			// EVERY_N_MILLISECONDS(10)
+			// {
+			// 	ProcessColorSparkle(color);
+			// 	//ShiftLedsAround(0, NUM_LEDS);
+			// }
 		}
 		break;
 	}
