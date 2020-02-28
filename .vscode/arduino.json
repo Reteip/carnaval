@@ -1,5 +1,5 @@
 {
     "board": "arduino:avr:uno",
     "port": "/dev/cu.usbserial-14130",
-    "sketch": "carnaval/carnaval.ino"
+    "sketch": "carnaval.ino"
 }
